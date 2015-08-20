@@ -14,6 +14,12 @@ namespace MsiParser
                 .Select(f => GetFullPath(db, db.Components.Where(c => c.Component == f.Component).Select(c => c.Directory).FirstOrDefault(), f.FileName.Split('|').Last()))
                 .ToList()
                 .ForEach(Console.WriteLine);
+            Console.WriteLine("\n====================================================\n");
+            db.Registries
+                .Select(r => $"{r.Key}{(string.IsNullOrEmpty(r.Name) ? string.Empty : "\\" + r.Name)} -> {r.Value}")
+                .ToList()
+                .ForEach(Console.WriteLine);
+
         }
 
         static MsiDatabase Parse(string path)
@@ -52,6 +58,18 @@ namespace MsiParser
                     KeyPath = comp.GetString(5),
                     Attributes = comp.GetString(6)
                 });
+
+                db.Registries = ViewToIEnumerable(database, "SELECT * FROM Registry", (reg) =>
+                new MsiRegistry
+                {
+                    Registry = reg.GetString(1),
+                    Root = reg.GetString(2),
+                    Key = reg.GetString(3),
+                    Name = reg.GetString(4),
+                    Value = reg.GetString(5),
+                    Component = reg.GetString(6)
+                });
+
                 return db;
             }
         }
@@ -77,8 +95,8 @@ namespace MsiParser
             var dirName = dir.DefaultDir == "." ? $"[{dir.Directory}]" : dir.DefaultDir.Split('|').Last();
 
             return parent != null
-                ? GetFullPath(db, dir.DirectoryParent, dirName + "\\" + pathSoFar)
-                : dirName + "\\" + pathSoFar;
+                ? GetFullPath(db, dir.DirectoryParent, $"{dirName}\\{pathSoFar}")
+                : $"{dirName}\\{pathSoFar}";
 
         }
     }
@@ -88,6 +106,7 @@ namespace MsiParser
         public IEnumerable<MsiComponent> Components { get; set; }
         public IEnumerable<MsiDirectory> Directories { get; set; }
         public IEnumerable<MsiFile> Files { get; set; }
+        public IEnumerable<MsiRegistry> Registries { get; set; }
     }
 
     class MsiDirectory
@@ -117,5 +136,15 @@ namespace MsiParser
         public string Language { get; set; }
         public string Atttibutes { get; set; }
         public string Sequence { get; set; }
+    }
+
+    class MsiRegistry
+    {
+        public string Registry { get; set; }
+        public string Root { get; set; }
+        public string Key { get; set; }
+        public string Name { get; set; }
+        public string Value { get; set; }
+        public string Component { get; set; }
     }
 }
