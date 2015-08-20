@@ -12,11 +12,15 @@ namespace MsiParser
             var db = Parse(args[0]);
             db.Files
                 .Select(f => GetFullPath(db, db.Components.Where(c => c.Component == f.Component).Select(c => c.Directory).FirstOrDefault(), f.FileName.Split('|').Last()))
+                .OrderBy(s => s)
                 .ToList()
                 .ForEach(Console.WriteLine);
+
             Console.WriteLine("\n====================================================\n");
+
             db.Registries
                 .Select(r => $"{r.Key}{(string.IsNullOrEmpty(r.Name) ? string.Empty : "\\" + r.Name)} -> {r.Value}")
+                .OrderBy(s => s)
                 .ToList()
                 .ForEach(Console.WriteLine);
 
